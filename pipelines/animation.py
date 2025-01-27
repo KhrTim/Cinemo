@@ -2,6 +2,7 @@ import os
 import torch
 import argparse
 import torchvision
+import ast
 
 from pipeline_videogen import VideoGenPipeline
 from diffusers.schedulers import DDIMScheduler
@@ -128,6 +129,17 @@ def main(args):
                                    enable_vae_temporal_decoder=args.enable_vae_temporal_decoder).video
         
         imageio.mimwrite(args.save_img_path + prompt.replace(' ', '_') + '_%04d' % i + '_%04d' % args.run_time + '-imageio.mp4', videos[0], fps=8, quality=8) # highest quality is 10, lowest is 0
+
+
+def call_animation_as_function(config: str = "./configs/sample.yaml", image_prompts: list[list] = [[]], intensity: int = 95, frames: int= 20):
+    config_args = OmegaConf.load(config)
+    print(config)
+    config_args["image_prompts"] = image_prompts
+    config_args["motion_bucket_id"] = intensity
+    config_args["num_sampling_steps"] = frames
+    print(config_args)
+
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
