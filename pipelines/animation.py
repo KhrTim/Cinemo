@@ -131,19 +131,19 @@ def main(args):
         imageio.mimwrite(args.save_img_path + prompt.replace(' ', '_') + '_%04d' % i + '_%04d' % args.run_time + '-imageio.mp4', videos[0], fps=8, quality=8) # highest quality is 10, lowest is 0
 
 
-def call_animation_as_function(config: str = "./configs/sample.yaml", image_prompts: list[list] = [[]], intensity: int = 95, frames: int= 20):
-    config_args = OmegaConf.load(config)
-    print(config)
-    config_args["image_prompts"] = image_prompts
-    config_args["motion_bucket_id"] = intensity
-    config_args["num_sampling_steps"] = frames
-    print(config_args)
-
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default="./configs/sample.yaml")
+    parser.add_argument("--image_name", type=str, default="")
+    parser.add_argument("--prompt", type=str, default="")
+    parser.add_argument("--intensity", type=int, default=95)
+    parser.add_argument("--frames", type=int, default=20)
     args = parser.parse_args()
 
-    main(OmegaConf.load(args.config))
+    config_args = OmegaConf.load(args.config)
+    print(args.config)
+    config_args["image_prompts"] = [[args.image_name, args.prompt]]
+    config_args["motion_bucket_id"] = args.intensity
+    config_args["num_sampling_steps"] = args.frames
+    print(config_args)
+    main(config_args)
