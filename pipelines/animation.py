@@ -22,6 +22,11 @@ from torchvision import transforms
 from einops import rearrange, repeat
 from utils import dct_low_pass_filter, exchanged_mixed_dct_freq
 from copy import deepcopy
+import logging
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 def prepare_image(path, vae, transform_video, device, dtype=torch.float16):
     with open(path, 'rb') as f:
@@ -98,10 +103,10 @@ def main(args):
             freq_filter = dct_low_pass_filter(dct_coefficients=base_content,
                                                     percentage=0.23)
             
-            noise = torch.randn(1, 4, 15, 40, 64).to(device)
+            noise = torch.randn(1, 4, 15, 64, 64).to(device)
 
             # add noise to base_content
-            diffuse_timesteps = torch.full((1,),int(975))
+            diffuse_timesteps = torch.full((1,),int(985))
             diffuse_timesteps = diffuse_timesteps.long()
             
             # 3d content
@@ -125,10 +130,10 @@ def main(args):
                                    width=args.image_size[1], 
                                    num_inference_steps=args.num_sampling_steps,
                                    guidance_scale=args.guidance_scale,
-                                   motion_bucket_id=args.motion_bucket_id,
+                                   motion_bucket_id=100-args.motion_bucket_id,
                                    enable_vae_temporal_decoder=args.enable_vae_temporal_decoder).video
         
-        imageio.mimwrite(args.save_img_path + prompt.replace(' ', '_') + '_%04d' % i + '_%04d' % args.run_time + '-imageio.mp4', videos[0], fps=8, quality=8) # highest quality is 10, lowest is 0
+        imageio.mimwrite(args.save_img_path + "final_result" + '_%04d' % i + '_%04d' % args.run_time + '-imageio.mp4', videos[0], fps=8, quality=10) # highest quality is 10, lowest is 0
 
 
 if __name__ == "__main__":
@@ -137,13 +142,16 @@ if __name__ == "__main__":
     parser.add_argument("--image_name", type=str, default="")
     parser.add_argument("--prompt", type=str, default="")
     parser.add_argument("--intensity", type=int, default=95)
-    parser.add_argument("--frames", type=int, default=20)
+    parser.add_argument("--num_sampling_steps", type=int, default=20)
+    parser.add_argument("--video_length", type=int, default=15)
+
     args = parser.parse_args()
 
     config_args = OmegaConf.load(args.config)
-    print(args.config)
+    logging.debug(args.config)
     config_args["image_prompts"] = [[args.image_name, args.prompt]]
     config_args["motion_bucket_id"] = args.intensity
-    config_args["num_sampling_steps"] = args.frames
-    print(config_args)
+    config_args["num_sampling_steps"] = args.num_sampling_steps
+    config_args["video_length"] = args.video_length
+    logging.debug(config_args)
     main(config_args)
